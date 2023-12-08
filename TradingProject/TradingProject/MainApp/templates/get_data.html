@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Data</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.0/chart.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Get Data</h1>
+        <a href="{% url 'upload_data' %}" class="btn btn-secondary mt-3">Upload Data</a>
+        <hr>
+        <form action="get_data" method="GET">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="timeframe" class="form-label">Timeframe</label>
+                <select class="form-select" name="timeframe" id="timeframe" required>
+                    <option value="1">1 Minute</option>
+                    <option value="5">5 Minutes</option>
+                    <option value="15">15 Minutes</option>
+                    <option value="30">30 Minutes</option>
+                    <option value="60">1 Hour</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Get Data</button>
+        </form>
+        <hr>
+        {% if data %}
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+            <script>
+                const ctx = document.getElementById('myChart').getContext('2d');
+                const data = {{ data|to_json }};
+
+                // Chart configuration for a candlestick chart
+                const chart = new Chart(ctx, {
+                    type: 'candlestick',
+                    data: {
+                        labels: data.map(candle => new Date(candle.timestamp)),
+                        datasets: [{
+                            label: 'Price',
+                            data: data,
+                            backgroundColor: data.map(candle => candle.open > candle.close ? '#ff6384' : '#36a2eb'),
+                            borderColor: data.map(candle => candle.open > candle.close ? '#ff6384' : '#36a2eb'),
+                            pointRadius: 2,
+                            barThickness: 10,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        title: {
+                            display: true,
+                            text: 'Price Chart'
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltips: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            xAxes: [{
+                                type: 'time',
+                                display: true,
+                                time: {
+                                    unit: 'minute'
+                                }
+                            }],
+                            yAxes: [{
+                                display: true,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Price'
+                                }
+                            }]
+                        }
+                    }
+                });
+            </script>
+        {% else %}
+            <p class="text-muted">No data available. Please upload data first.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
